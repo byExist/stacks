@@ -1,13 +1,43 @@
 package stacks
 
 import (
+	"encoding/json"
+	"fmt"
 	"iter"
 	"slices"
+	"strings"
 )
 
 // Stack is a generic, dynamically resizing stack.
 type Stack[T any] struct {
 	items []T
+}
+
+// String returns a string representation of the stack.
+func (s *Stack[T]) String() string {
+	var b strings.Builder
+	b.WriteString("Stack{")
+	for i, v := range s.items {
+		if i > 0 {
+			b.WriteString(", ")
+		}
+		b.WriteString(fmt.Sprint(v))
+	}
+	b.WriteString("}")
+	return b.String()
+}
+
+// MarshalJSON implements json.Marshaler for Stack.
+func (s *Stack[T]) MarshalJSON() ([]byte, error) {
+	return json.Marshal(s.items)
+}
+
+// UnmarshalJSON implements json.Unmarshaler for Stack.
+func (s *Stack[T]) UnmarshalJSON(data []byte) error {
+	if err := json.Unmarshal(data, &s.items); err != nil {
+		return err
+	}
+	return nil
 }
 
 // New creates a new empty stack.

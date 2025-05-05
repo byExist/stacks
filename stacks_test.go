@@ -1,6 +1,7 @@
 package stacks_test
 
 import (
+	"encoding/json"
 	"fmt"
 	"slices"
 	"testing"
@@ -121,7 +122,7 @@ func TestValues(t *testing.T) {
 
 func TestClear(t *testing.T) {
 	s := stacks.New[int]()
-	for i := range 5 {
+	for i := 0; i < 5; i++ {
 		stacks.Push(s, i)
 	}
 	require.Equal(t, 5, stacks.Len(s))
@@ -186,6 +187,30 @@ func TestStackWithDifferentTypes(t *testing.T) {
 	})
 }
 
+func TestStackString(t *testing.T) {
+	s := stacks.New[int]()
+	stacks.Push(s, 1)
+	stacks.Push(s, 2)
+	require.Contains(t, s.String(), "Stack{1, 2}")
+}
+
+func TestStackMarshalUnmarshalJSON(t *testing.T) {
+	s := stacks.New[int]()
+	stacks.Push(s, 10)
+	stacks.Push(s, 20)
+
+	data, err := json.Marshal(s)
+	require.NoError(t, err)
+
+	var s2 stacks.Stack[int]
+	err = json.Unmarshal(data, &s2)
+	require.NoError(t, err)
+
+	vals1 := slices.Collect(stacks.Values(s))
+	vals2 := slices.Collect(stacks.Values(&s2))
+	require.Equal(t, vals1, vals2)
+}
+
 func ExampleNew() {
 	s := stacks.New[int]()
 	stacks.Push(s, 1)
@@ -233,9 +258,12 @@ func ExamplePush() {
 	stacks.Push(s, "alpha")
 	stacks.Push(s, "beta")
 
-	fmt.Println(stacks.Len(s))
+	for v := range stacks.Values(s) {
+		fmt.Println(v)
+	}
 	// Output:
-	// 2
+	// alpha
+	// beta
 }
 
 func ExamplePop() {
@@ -265,12 +293,18 @@ func ExamplePeek() {
 
 func ExampleLen() {
 	s := stacks.New[int]()
+	fmt.Println(stacks.Len(s))
+
 	stacks.Push(s, 1)
 	stacks.Push(s, 2)
+	fmt.Println(stacks.Len(s))
 
+	_, _ = stacks.Pop(s)
 	fmt.Println(stacks.Len(s))
 	// Output:
+	// 0
 	// 2
+	// 1
 }
 
 func ExampleValues() {
@@ -289,9 +323,42 @@ func ExampleValues() {
 func ExampleClear() {
 	s := stacks.New[int]()
 	stacks.Push(s, 123)
-	stacks.Clear(s)
+	stacks.Push(s, 456)
+	fmt.Println("Before clear:", stacks.Len(s))
 
-	fmt.Println(stacks.Len(s))
+	stacks.Clear(s)
+	fmt.Println("After clear:", stacks.Len(s))
 	// Output:
-	// 0
+	// Before clear: 2
+	// After clear: 0
+}
+
+func ExampleStack_String() {
+	s := stacks.New[int]()
+	stacks.Push(s, 1)
+	stacks.Push(s, 2)
+	fmt.Println(s)
+	// Output:
+	// Stack{1, 2}
+}
+
+func ExampleStack_MarshalJSON() {
+	s := stacks.New[int]()
+	stacks.Push(s, 1)
+	stacks.Push(s, 2)
+	b, _ := json.Marshal(s)
+	fmt.Println(string(b))
+	// Output:
+	// [1,2]
+}
+
+func ExampleStack_UnmarshalJSON() {
+	var s stacks.Stack[int]
+	_ = json.Unmarshal([]byte(`[5,10]`), &s)
+	for v := range stacks.Values(&s) {
+		fmt.Println(v)
+	}
+	// Output:
+	// 5
+	// 10
 }
